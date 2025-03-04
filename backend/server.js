@@ -5,6 +5,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -20,6 +21,15 @@ const pool = new Pool({
 
 const secret = 'segredo_super_secreto';
 
+// Inicializar banco de dados
+const initDb = async () => {
+  const sql = fs.readFileSync('backend/init_db.sql', 'utf8');
+  await pool.query(sql);
+  console.log('Banco de dados inicializado.');
+};
+
+initDb();
+
 // Login
 app.post('/login', async (req, res) => {
   const { usuario, senha } = req.body;
@@ -33,14 +43,6 @@ app.post('/login', async (req, res) => {
     }
   }
   res.status(401).json({ message: 'Usuário ou senha incorretos' });
-});
-
-// Criar usuário (somente admin)
-app.post('/admin/cadastrar', async (req, res) => {
-  const { nome, sobrenome, usuario, email, perfil, senha } = req.body;
-  const hashedSenha = await bcrypt.hash(senha, 10);
-  await pool.query('INSERT INTO usuarios (nome, sobrenome, usuario, email, perfil, senha) VALUES ($1, $2, $3, $4, $5, $6)', [nome, sobrenome, usuario, email, perfil, hashedSenha]);
-  res.json({ message: 'Usuário cadastrado' });
 });
 
 app.listen(5000, () => console.log('Servidor rodando na porta 5000'));
